@@ -15,8 +15,8 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "node --import tsx --test 'packages/**/*.test.ts' 'packages/**/*.spec.ts'",
-    "test:watch": "node --import tsx --test --watch 'packages/**/*.test.ts' 'packages/**/*.spec.ts' ",
+    "test": "tsx --tsconfig tsconfig.test.json --test \"packages/**/*.test.ts\" \"packages/**/*.spec.ts\"",
+    "test:watch": "tsx --test --watch 'packages/**/*.test.ts' 'packages/**/*.spec.ts' ",
     "build": "pnpm --recursive run build",
     "clean": "pnpm --recursive clean && rimraf dist"
   },
@@ -30,6 +30,7 @@
   "author": "ESP86",
   "license": "MIT",
   "devDependencies": {
+    "@swc/core": "^1.16.2",
     "@types/node": "^20.14.0",
     "eslint": "^10.10.0",
     "eslint-config-prettier": "^10.1.8",
