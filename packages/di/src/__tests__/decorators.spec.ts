@@ -8,7 +8,7 @@ import type { InjectableOptions } from '../types/injectable-options.js';
 import type { InjectionToken } from '../types/injection-token.js';
 
 describe('DI Decorator (@Injectable & @Inject)', () => {
-  it('should attack @Injectable metadata with custom scope to target class', () => {
+  it('should attach @Injectable metadata with custom scope to target class', () => {
     @Injectable({ scope: 'transient' })
     // eslint-disable-next-line @typescript-eslint/no-extraneous-class
     class UserService {}

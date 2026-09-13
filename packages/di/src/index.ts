@@ -4,3 +4,17 @@ export { Injectable } from './decorators/injectable.decorator.js';
 export { Inject } from './decorators/inject.decorator.js';
 export type { InjectionToken, Newable } from './types/injection-token.js';
 export type { InjectableOptions, ScopeOption } from './types/injectable-options.js';
+
+export { ProviderRegistry } from './providers/provider-registry.js';
+export {
+  isClassProvider,
+  isValueProvider,
+  isFactoryProvider,
+  isExistingProvider,
+} from './providers/provider.interface.js';
+export type {
+  ClassProvider,
+  ValueProvider,
+  FactoryProvider,
+  ExistingProvider,
+} from './providers/provider.interface.js';
