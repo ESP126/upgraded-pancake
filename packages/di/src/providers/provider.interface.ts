@@ -23,7 +23,7 @@ export interface ValueProvider<T = unknown> {
  */
 export interface FactoryProvider<T = unknown> {
   provide: InjectionToken<T>;
-  useFactory: (...args: unknown[]) => T | Promise<T>;
+  useFactory: (...args: never[]) => T | Promise<T>;
   inject?: InjectionToken[];
   scope?: ScopeOption;
 }

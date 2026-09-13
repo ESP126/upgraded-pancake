@@ -17,4 +17,9 @@ export type {
   ValueProvider,
   FactoryProvider,
   ExistingProvider,
+  CustomProvider,
+  Provider,
 } from './providers/provider.interface.js';
+
+export { DependencyGraphNode } from './graph/dependency-graph.node.js';
+export { DependencyGraph } from './graph/dependency-graph.js';

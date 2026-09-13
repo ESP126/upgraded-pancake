@@ -1,7 +1,7 @@
 /**
  * Generic type for class constructor functions.
  */
-export type Newable<T = unknown> = new (...args: unknown[]) => T;
+export type Newable<T = unknown> = new (...args: never[]) => T;
 
 /**
  * Union type representing valid dependency injection lookup tokens.
