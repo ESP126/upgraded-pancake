@@ -1,20 +1,20 @@
 {
-	"name": "@framework/logger",
-	"version": "0.0.1",
-	"description": "Zero-dependency high-performance structured logger for the framework",
-	"type": "module",
-	"exports": {
-		".": {
-			"import": "./dist/index.js",
-			"types": "./dist/index.d.ts"
-		}
-	},
-	"files": [
-		"dist"
-	],
-	"scripts": {
-		"build": "tsup",
-		"clean": "rimraf dist"
-	},
-	"license": "MIT"
+  "name": "@framework/logger",
+  "version": "0.0.1",
+  "description": "Zero-dependency high-performance structured logger for the framework",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "clean": "rimraf dist"
+  },
+  "license": "MIT"
 }
