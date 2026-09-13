@@ -1,13 +1,10 @@
 {
-  "extends": "./tsconfig.base.json",
-  "compilerOptions": {
-    "baseUrl": ".",
-    "rootDir": "."
-  },
-  "include": [],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ],
-  "references": []
+	"extends": "./tsconfig.base.json",
+	"compilerOptions": {
+		"baseUrl": ".",
+		"rootDir": "."
+	},
+	"include": [],
+	"exclude": ["node_modules", "dist"],
+	"references": []
 }

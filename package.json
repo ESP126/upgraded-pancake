@@ -1,27 +1,35 @@
 {
-  "name": "@framework/monorepo",
-  "private": "true",
-  "version": "0.0.0",
-  "description": "Zero-dependency modular TypeScript web framework",
-  "type": "module",
-  "packageManager": "pnpm@9.10.0",
-  "engines": {
-    "node": ">=20",
-    "pnpm": ">=9.0.0"
-  },
-  "scripts": {
-    "prepare": "echo 'Framework workspace initialized'"
-  },
-  "keywords": [
-    "typescript",
-    "framework",
-    "zero-dependency",
-    "http",
-    "performance"
-  ],
-  "author": "ESP86",
-  "license": "MIT",
-  "devDependencies": {
-    "typescript": "^5.6.2"
-  }
+	"name": "@framework/monorepo",
+	"private": "true",
+	"version": "0.0.0",
+	"description": "Zero-dependency modular TypeScript web framework",
+	"type": "module",
+	"packageManager": "pnpm@9.10.0",
+	"engines": {
+		"node": ">=20",
+		"pnpm": ">=9.0.0"
+	},
+	"scripts": {
+		"prepare": "echo 'Framework workspace initialized'",
+		"lint": "eslint .",
+		"lint:fix": "eslint . --fix",
+		"format": "prettier --write .",
+		"format:check": "prettier --check ."
+	},
+	"keywords": [
+		"typescript",
+		"framework",
+		"zero-dependency",
+		"http",
+		"performance"
+	],
+	"author": "ESP86",
+	"license": "MIT",
+	"devDependencies": {
+		"eslint": "^10.10.0",
+		"eslint-config-prettier": "^10.1.8",
+		"prettier": "^3.9.6",
+		"typescript": "^5.6.2",
+		"typescript-eslint": "^8.70.0"
+	}
 }
