@@ -1,0 +1,24 @@
+{
+  "name": "@framework/monorepo",
+  "private": "true",
+  "version": "0.0.0",
+  "description": "Zero-dependency modular TypeScript web framework",
+  "type": "module",
+  "packageManager": "pnpm@9.10.0",
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "prepare": "echo 'Framework workspace initialized'"
+  },
+  "keywords": [
+    "typescript",
+    "framework",
+    "zero-dependency",
+    "http",
+    "performance"
+  ],
+  "author": "ESP86",
+  "license": "MIT"
+}
