@@ -12,7 +12,8 @@ import { SingletonScopeManager } from '../scopes/singleton-scope.js';
 import { ContainerError } from '../errors/container.error.js';
 import { MetadataStorage } from '../metadata/metadata-storage.js';
 import { METADATA_KEYS } from '../metadata/metadata-keys.js';
-import type { InjectableOptions } from '../types/injectable-options.js';
+import type { InjectableOptions, ScopeOption } from '../types/injectable-options.js';
+import { ScopedContainer } from './scoped-container.js';
 
 /**
  * Core Dependency Injection container providing registration, resolution, and lifetime management.
@@ -44,6 +45,46 @@ export class Container {
   public build(): void {
     this.graph.build(this.registry);
     this.isBuilt = true;
+  }
+
+  /**
+   * Creates a new ScopedContainer instance tied to a specific request lifecycle.
+   */
+  public createScope(): ScopedContainer {
+    if (!this.isBuilt) {
+      this.build();
+    }
+    return new ScopedContainer(this);
+  }
+
+  /**
+   * Gets the internal ProviderRegistry instance.
+   */
+  public getRegistry(): ProviderRegistry {
+    return this.registry;
+  }
+
+  /**
+   * Resolves the configured lifetime scope of a provider.
+   *
+   * @param - CustomProvider definition.
+   */
+  public resolveScope(provider: CustomProvider): ScopeOption {
+    if ('scope' in provider && provider.scope) {
+      return provider.scope;
+    }
+
+    if (isClassProvider(provider)) {
+      const metadataOptions = MetadataStorage.getMetadata<InjectableOptions>(
+        METADATA_KEYS.INJECTABLE,
+        provider.useClass,
+      );
+      if (metadataOptions?.scope) {
+        return metadataOptions.scope;
+      }
+    }
+
+    return 'singleton';
   }
 
   /**

@@ -29,3 +29,4 @@ export { CircularDependencyError } from './errors/circular-dependency.error.js';
 export { SingletonScopeManager } from './scopes/singleton-scope.js';
 export { ContainerError } from './errors/container.error.js';
 export { Container } from './container/container.js';
+export { ScopedContainer } from './container/scoped-container.js';
