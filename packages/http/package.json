@@ -1,0 +1,22 @@
+{
+  "name": "@framework/http",
+  "description": "Zero-dependency high-performance HTTP server abstraction for the framework",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "clean": "rimraf dist"
+  },
+  "license": "MIT"
+}
