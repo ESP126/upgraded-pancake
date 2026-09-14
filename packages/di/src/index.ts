@@ -23,3 +23,5 @@ export type {
 
 export { DependencyGraphNode } from './graph/dependency-graph.node.js';
 export { DependencyGraph } from './graph/dependency-graph.js';
+export { CircularDependencyDetector } from './graph/circular-dependency-detector.js';
+export { CircularDependencyError } from './errors/circular-dependency.error.js';

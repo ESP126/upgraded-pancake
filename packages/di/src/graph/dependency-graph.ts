@@ -8,6 +8,7 @@ import {
 import { MetadataStorage } from '../metadata/metadata-storage.js';
 import { METADATA_KEYS } from '../metadata/metadata-keys.js';
 import { DependencyGraphNode } from './dependency-graph.node.js';
+import { CircularDependencyDetector } from './circular-dependency-detector.js';
 
 /**
  * Directed graph building and topological sorting engine for Dependency Injection.
@@ -36,6 +37,8 @@ export class DependencyGraph {
     for (const node of this.nodes.values()) {
       this.resolveNodeDependencies(node);
     }
+
+    CircularDependencyDetector.detect(this);
   }
 
   /**
