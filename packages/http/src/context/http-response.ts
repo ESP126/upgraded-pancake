@@ -1,4 +1,5 @@
 import type http from 'node:http';
+import { HeaderSanitizer } from '../utils/header-sanitizer.js';
 
 /**
  * High-level, fluent HTTP response wrapper over native Node.js http.ServerResponse.
@@ -41,7 +42,13 @@ export class HttpResponse {
    */
   public header(name: string, value: string | string[]): this {
     if (!this.rawResponse.headersSent) {
-      this.rawResponse.setHeader(name, value);
+      HeaderSanitizer.validateName(name);
+
+      const sanitizedValue = Array.isArray(value)
+        ? value.map((val) => HeaderSanitizer.sanitizeValue(val))
+        : HeaderSanitizer.sanitizeValue(value);
+
+      this.rawResponse.setHeader(name, sanitizedValue);
     }
     return this;
   }
