@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 
 import type http from 'node:http';
+import { BodyParser } from '../parser/body-parser.js';
+import type { StreamCollectorOptions } from '../stream/stream-collector.js';
 
 /**
  * High-level. type-safe wrapper over native Node.js http.IncomingMessage.
@@ -8,6 +10,7 @@ import type http from 'node:http';
 export class HttpRequest {
   private parsedUrl?: URL;
   private queryParams?: Record<string, string>;
+  private parsedBody?: unknown;
 
   /**
    * Creates a new HttpRequest wrapper instance.
@@ -24,6 +27,13 @@ export class HttpRequest {
   }
 
   /**
+   * Gets the parsed body payload if parseBody() was invoked.
+   */
+  public get body(): unknown {
+    return this.parsedBody;
+  }
+
+  /**
    * Gets the raw request path and query string (e.g., '/api/users?page=1').
    */
   public get url(): string {
@@ -35,6 +45,22 @@ export class HttpRequest {
    */
   public get headers(): http.IncomingHttpHeaders {
     return this.rawRequest.headers;
+  }
+
+  /**
+   * Reads and parses the incoming request body using BodyParser.
+   *
+   * @param options - Collector and limit configuration options.
+   * @returns Promise resolving to the parsed body.
+   */
+  public async parseBody<T = unknown>(options?: StreamCollectorOptions): Promise<T> {
+    if (this.parseBody !== undefined) {
+      return this.parseBody as T;
+    }
+
+    const contentType = this.getHeader('content-type');
+    this.parsedBody = await BodyParser.parse(this.rawRequest, contentType, options);
+    return this.parsedBody as T;
   }
 
   /**
