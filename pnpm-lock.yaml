@@ -41,6 +41,8 @@ importers:
 
   packages/di: {}
 
+  packages/http: {}
+
   packages/logger: {}
 
 packages:
