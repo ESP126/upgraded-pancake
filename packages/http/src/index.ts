@@ -15,3 +15,6 @@ export { BodyParser } from './parser/body-parser.js';
 
 export { InvalidHeaderError } from './errors/invalid-header.error.js';
 export { HeaderSanitizer } from './utils/header-sanitizer.js';
+
+export { CookieSerializer } from './utils/cookie-serializer.js';
+export type { CookieOptions } from './types/cookie-options.js';

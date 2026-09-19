@@ -1,5 +1,7 @@
 import type http from 'node:http';
 import { HeaderSanitizer } from '../utils/header-sanitizer.js';
+import { CookieSerializer } from '../utils/cookie-serializer.js';
+import type { CookieOptions } from '../types/cookie-options.js';
 
 /**
  * High-level, fluent HTTP response wrapper over native Node.js http.ServerResponse.
@@ -51,6 +53,44 @@ export class HttpResponse {
       this.rawResponse.setHeader(name, sanitizedValue);
     }
     return this;
+  }
+
+  /**
+   * Sets a Set-Cookie response header.
+   *
+   * @param name - Cookie name string.
+   * @param value - Cookie raw value string.
+   * @param options - Cookie serialization options.
+   * @returns Current HttpResponse instance for chaining.
+   */
+  public cookie(name: string, value: string, options: CookieOptions = {}): this {
+    const serialized = CookieSerializer.serialize(name, value, options);
+    const existing = this.rawResponse.getHeader('Set-Cookie');
+
+    if (!existing) {
+      this.header('Set-Cookie', serialized);
+    } else if (Array.isArray(existing)) {
+      this.header('Set-Cookie', [...existing, serialized]);
+    } else {
+      this.header('Set-Cookie', [String(existing), serialized]);
+    }
+
+    return this;
+  }
+
+  /**
+   * Clears a cookie by setting its expiration data in the past.
+   *
+   * @param name - Cookie name string.
+   * @param options - Cookie options matching the original cookie path and domain.
+   * @returns Current HttpResponse instance for chaining.
+   */
+  public clearCookie(name: string, options: CookieOptions = {}): this {
+    return this.cookie(name, '', {
+      ...options,
+      expires: new Date(0),
+      maxAge: 0,
+    });
   }
 
   /**

@@ -3,6 +3,7 @@
 import type http from 'node:http';
 import { BodyParser } from '../parser/body-parser.js';
 import type { StreamCollectorOptions } from '../stream/stream-collector.js';
+import { CookieSerializer } from '../utils/cookie-serializer.js';
 
 /**
  * High-level. type-safe wrapper over native Node.js http.IncomingMessage.
@@ -11,6 +12,7 @@ export class HttpRequest {
   private parsedUrl?: URL;
   private queryParams?: Record<string, string>;
   private parsedBody?: unknown;
+  private parsedCookies?: Record<string, string>;
 
   /**
    * Creates a new HttpRequest wrapper instance.
@@ -38,6 +40,19 @@ export class HttpRequest {
    */
   public get url(): string {
     return this.rawRequest.url ?? '/';
+  }
+
+  /**
+   * Gets parsed request cookies.
+   *
+   * @param secret - Optional secrey key to unsign cookies.
+   */
+  public getCookie(secret?: string): Record<string, string> {
+    if (!this.parsedCookies) {
+      const cookieHeader = this.getHeader('cookie');
+      this.parsedCookies = CookieSerializer.parse(cookieHeader, secret);
+    }
+    return this.parsedCookies;
   }
 
   /**
