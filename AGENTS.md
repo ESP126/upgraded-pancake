@@ -1,445 +1,214 @@
 # Repository Guidelines
 
+Zero-dependency modular TypeScript web framework, distributed as a pnpm monorepo (`@framework/*`).
+
 ## Project Overview
 
-**Hades** (`@framework/monorepo`) is a zero-dependency modular TypeScript web framework built on top of Node.js native APIs. It provides high-performance HTTP server abstractions, dependency injection, and structured logging without external runtime dependencies.
-
-The project follows a monorepo structure with three independent packages:
-
-- `@framework/http` - HTTP server abstraction
-- `@framework/di` - Dependency injection container
-- `@framework/logger` - Structured logger
+Framework primitives for building HTTP servers: a Node `http.Server` wrapper, request/response abstractions, body parsing, a radix-tree router, a dependency-injection container, and a structured logger. **Zero runtime dependencies** — every module is hand-rolled over Node's standard library.
 
 ## Architecture & Data Flow
 
-### High-Level Structure
+### Packages (independent, no inter-dependencies)
 
-```
-packages/
-├── http/          # HTTP server wrapper (Node:http native)
-│   ├── src/
-│   │   ├── server/http-server.ts        # Core server class with socket tracking
-│   │   ├── context/                      # Request/Response wrappers
-│   │   │   ├── http-request.ts           # Typed HTTP request abstraction
-│   │   │   └── http-response.ts          # Fluent response builder
-│   │   ├── parser/                       # Body parsing (JSON, URL-encoded)
-│   │   ├── stream/stream-collector.ts    # Stream body collection
-│   │   ├── errors/                       # Custom HTTP errors
-│   │   ├── types/                        # Server options, request handlers
-│   │   └── utils/                        # Header sanitization
-│   └── __tests__/                         # Native node:test specs
-│
-├── di/            # Dependency injection container
-│   ├── src/
-│   │   ├── container/                     # Core Container & ScopedContainer
-│   │   ├── graph/                         # Dependency graph + topological sort
-│   │   ├── providers/                     # Provider types (class/value/factory)
-│   │   ├── decorators/                    # @Injectable, @Inject decorators
-│   │   ├── scopes/                        # Singleton & Request scope managers
-│   │   ├── metadata/                      # Runtime metadata storage
-│   │   ├── errors/                        # DI-specific errors
-│   │   └── types/                         # InjectionToken, provider interfaces
-│   └── __tests__/                         # DI container specs
-│
-└── logger/        # Structured logging utilities
-    ├── src/
-    │   ├── console-logger.ts              # Console output formatter
-    │   ├── context/trace-store.ts         # Trace context propagation
-    │   ├── diagnostics/                   # Performance metrics collection
-    │   ├── interfaces/                    # ILogger interface
-    │   └── types/                         # LogLevel, logger options
-    └── __tests__/                         # Logger specs
-```
+- **`@framework/http`** — core HTTP layer. `HttpServer` wraps `node:http.Server`; `HttpRequest`/`HttpResponse` wrap `IncomingMessage`/`ServerResponse`; `BodyParser` + `StreamCollector` handle request bodies; security utilities guard cookies, headers, and payload size.
+- **`@framework/di`** — dependency-injection container. `@Injectable`/`@Inject` decorators record metadata into a `WeakMap` engine; `ProviderRegistry` holds providers; `DependencyGraph` builds edges + detects cycles; `Container`/`ScopedContainer` resolve instances by scope.
+- **`@framework/router`** — radix-tree router. `RadixNode` is the tree node; `NodeType` classifies edges (STATIC / PARAM / WILDCARD).
+- **`@framework/logger`** — structured logger. `ConsoleLogger` implements `ILogger` (JSON/text modes); `AsyncTraceStore` and `PerformanceDiagnostics` provide tracing and metric counters.
 
-### Key Modules & Data Flow
+**Data flow (request):** `HttpServer.listen()` → `requestHandler(req, res)` → `HttpRequest.parseBody()` routes the stream to `BodyParser` by `Content-Type` → handler returns → `HttpResponse` writes → `HttpServer.close()` drains sockets. The router (`RadixNode`) matches a path to a handler; DI resolves handler dependencies from the `Container`.
 
-#### HTTP Module
+### Key modules & responsibilities
 
-- **HttpServer**: Wraps Node's native `http.Server`, tracks active sockets for graceful shutdown
-- **HttpRequest**: Typed wrapper over `IncomingMessage` with body parsing (`parseBody()`)
-- **HttpResponse**: Fluent API builder pattern for status, headers, and body serialization
-- **BodyParser**: Parses JSON and URL-encoded request bodies with prototype pollution guards
-- **StreamCollector**: Buffers streaming request bodies within size limits
+| Path                                                         | Responsibility                                                                                                |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| `packages/http/src/server/http-server.ts`                    | `HttpServer`: socket tracking, `listen`/`close`, `getRawServer`, `isRunning`, timeout config                  |
+| `packages/http/src/context/http-request.ts`                  | `HttpRequest`: typed wrappers (`method`, `body`, `url`, `query`, `getCookie`, `parseBody`, `getHeader`, `ip`) |
+| `packages/http/src/context/http-response.ts`                 | `HttpResponse`: typed `ServerResponse` wrapper                                                                |
+| `packages/http/src/parser/body-parser.ts`                    | `BodyParser.parse`: dispatches JSON / urlencoded / text / raw by `Content-Type`                               |
+| `packages/http/src/stream/stream-collector.ts`               | `StreamCollector`: chunked reader with `maxBodySize`                                                          |
+| `packages/http/src/utils/header-sanitizer.ts`                | `HeaderSanitizer`: CRLF-injection protection                                                                  |
+| `packages/http/src/utils/cookie-serializer.ts`               | `CookieSerializer`: HMAC-SHA256 signed cookies                                                                |
+| `packages/http/src/errors/*.error.ts`                        | `BadRequestError`, `InvalidHeaderError`, `PayloadTooLargeError`                                               |
+| `packages/di/src/decorators/injectable.decorator.ts`         | `@Injectable(options)` — class decorator, scope config                                                        |
+| `packages/di/src/decorators/inject.decorator.ts`             | `@Inject(token)` — parameter/property decorator                                                               |
+| `packages/di/src/providers/provider-registry.ts`             | `ProviderRegistry`; provider kinds below                                                                      |
+| `packages/di/src/graph/dependency-graph.ts`                  | `DependencyGraph`: node map, `getTopologicalOrder`, edge resolution                                           |
+| `packages/di/src/graph/circular-dependency-detector.ts`      | `CircularDependencyDetector`: DFS cycle detection                                                             |
+| `packages/di/src/container/container.ts`                     | `Container`: root resolver, singleton instantiation, `createScope`                                            |
+| `packages/di/src/container/scoped-container.ts`              | `ScopedContainer`: request-scoped + transient resolution                                                      |
+| `packages/di/src/metadata/metadata-storage.ts`               | `MetadataStorage`: `WeakMap`-based decorator metadata                                                         |
+| `packages/router/src/nodes/radix-node.ts`                    | `RadixNode`: tree insert/lookup, method→handler map                                                           |
+| `packages/logger/src/console-logger.ts`                      | `ConsoleLogger`                                                                                               |
+| `packages/logger/src/context/trace-store.ts`                 | `AsyncTraceStore`                                                                                             |
+| `packages/logger/src/diagnostics/performance-diagnostics.ts` | `PerformanceDiagnostics`                                                                                      |
 
-#### DI Module
+### Dependency-injection design
 
-- **Container**: Core DI container supporting three lifetimes: `singleton`, `request`, `transient`
-- **ScopedContainer**: Request-scoped child container for per-request dependency resolution
-- **ProviderRegistry**: Normalizes constructor classes and provider objects
-- **DependencyGraph**: Builds topological sort of dependencies for correct instantiation order
-- **Decorators**: `@Injectable()` marks classes for DI; `@Inject()` resolves tokens
-
-#### Logger Module
-
-- **ConsoleLogger**: Formatted console output with ANSI color support
-- **TraceContext**: Propagates trace IDs across async boundaries
-- **PerformanceDiagnostics**: Collects latency metrics for performance monitoring
-  \
-
-### Package Interactions
-
-```
-┌─────────────┐     ┌──────────────┐
-│   http      │◄───►│    di        │
-└─────────────┘     └──────┬───────┘
-                           │
-                     ┌─────▼─────┐
-                     │  logger   │
-                     └───────────┘
-```
-
-- HTTP module uses DI for service injection (e.g., middleware, body parsers)
-- Logger module provides structured logging for all packages
-- All packages are zero-dependency on each other except for Node.js built-ins
+- **Providers** (`packages/di/src/providers/provider.interface.ts`): `ClassProvider`, `ValueProvider`, `FactoryProvider`, `ExistingProvider`, `CustomProvider`. Register via `{ provide: token, useClass/useValue/useFactory/useExisting }`.
+- **Scopes** (`ScopeOption`): `singleton` (cached, reused), `request` (per-`ScopedContainer`), `transient` (new instance each resolve).
+- **Resolution order**: `Container.build()` → `DependencyGraph` maps tokens to nodes and records edges → `CircularDependencyDetector.detect()` (DFS, throws `CircularDependencyError` with the cycle path) → `getTopologicalOrder()` yields instantiation order → `initSingletons()` builds singletons.
+- **Metadata**: `@Injectable`/`@Inject` write into `MetadataStorage` `WeakMap`s keyed by `METADATA_KEYS`; `emitDecoratorMetadata` provides the design-time type info the container reads.
 
 ## Key Directories
 
-| Directory                      | Purpose                                         |
-| ------------------------------ | ----------------------------------------------- |
-| `packages/http/src/`           | HTTP server implementation and utilities        |
-| `packages/di/src/container/`   | Core DI container with singleton/request scopes |
-| `packages/di/src/graph/`       | Dependency graph for topological resolution     |
-| `packages/di/src/providers/`   | Provider type definitions and registry          |
-| `packages/di/src/decorators/`  | Injectable/Inject decorators                    |
-| `packages/logger/src/context/` | Trace context propagation utilities             |
-| `packages/http/src/parser/`    | Request body parsing (JSON, form)               |
+- `packages/{http,di,router,logger}/src` — package source, each rooted at `src/index.ts` (public API).
+- `packages/{http,di,router,logger}/src/__tests__` — spec files.
+- `packages/{http,di,router,logger}/tsup.config.ts` — per-package build config (extends base).
+- `docs/agents` — (currently empty) intended home for AI-agent guidance.
 
 ## Development Commands
 
-```bash
-# Build all packages
-pnpm build
+Run from the repo root. Node ≥22, pnpm ≥12.4.2 (`pnpm-lock.yaml`), `nvmrc`=22.
 
-# Run tests (uses native node:test via tsx)
-pnpm test
+- `pnpm install` — install. Workspace uses `trustPolicy: no-downgrade`, `blockExoticSubdeps`, `minimumReleaseAge: 10080` (1 year).
+- `pnpm lint` / `pnpm lint:fix` — ESLint (`.`; `--fix` autofix).
+- `pnpm format` / `pnpm format:check` — Prettier.
+- `pnpm test` — run all specs via `tsx --tsconfig tsconfig.test.json --test`.
+- `pnpm build` — build every package with `tsup` (`--recursive` inside root build). Per package: `pnpm build` runs `tsup`.
+- `pnpm clean` — `rimraf dist` in every package plus root `dist`.
 
-# Watch mode for tests
-pnpm test:watch
+### Package scripts
 
-# Lint codebase
-pnpm lint
-
-# Auto-fix lint issues
-pnpm lint:fix
-
-# Format with Prettier
-pnpm format
-
-# Clean build artifacts
-pnpm clean
-```
+Each `packages/*` has `build` (`tsup`) and `clean` (`rimraf dist`). Output to `dist/`, published via `exports`/`main`/`module`/`types` → `./dist/index.js` / `./dist/index.d.ts`.
 
 ## Code Conventions & Common Patterns
 
-### TypeScript Configuration
+### Formatting
 
-- **Target**: ES2022
-- **Module**: `nodenext` with `moduleResolution: nodenext`
-- **Strict Mode**: Full strict mode enabled (`strict: true`)
-- **Key Options**:
-  - `noImplicitAny: true`
-  - `strictNullChecks: true`
-  - `noUncheckedIndexedAccess: true`
-  - `exactOptionalPropertyTypes: true`
-  - `declaration: true` (generates .d.ts files)
+- **Prettier** (`.prettierrc`): `printWidth: 100`, `singleQuote`, `semi`, `trailingComma: "all"`, `arrowParens: "always"`.
+- **ESLint**: `typescript-eslint` `strict` + `stylistic` + `eslint-config-prettier`. Hard errors: `explicit-function-return-type`, `no-explicit-any`, `consistent-type-imports` (prefer type imports, `fixStyle: separate-type-imports`). `no-unused-vars` ignores `_`-prefixed names/args.
 
-### Naming Patterns
+### TypeScript
 
-**Classes**: PascalCase with descriptive purpose
+- All flags in `tsconfig.base.json`: `target: es2022`, `module`/`moduleResolution: nodenext`, `strict: true` plus `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `strictPropertyInitialization`, `noUnusedLocals`, `noUnusedParameters`, `declaration` + `declarationMap` + `sourceMap`, `isolatedModules`, `esModuleInterop`, `skipLibCheck`.
+- **ESM + `nodenext`**: imports/exports must use **`.js` extensions** in `.ts` source (e.g. `import { X } from './foo.js'`). This is enforced at compile and lint time.
+- **Decorators** enabled only in `tsconfig.test.json` (`experimentalDecorators` + `emitDecoratorMetadata`), which also sets `noEmit` and `include: packages/**/*.ts`. DI code relies on them. When running/typing tests, use `tsconfig.test.json`, not the base config.
 
-```typescript
-export class HttpServer { ... }
-export class HttpRequest { ... }
-export class Container { ... }
-export class ScopedContainer { ... }
-```
+### Error handling
 
-**Functions/Methods**: camelCase
+- Prefer typed error classes over thrown plain errors. Existing classes: `ContainerError`, `CircularDependencyError` (DI); `BadRequestError`, `InvalidHeaderError`, `PayloadTooLargeError` (http). New errors: add a dedicated class in the relevant `errors/*.error.ts`, export it from `index.ts`, and reference it in `throws`/`instanceof` sites.
 
-```typescript
-public listen(port?: number, host?: string): Promise<void>
-public resolve<T>(token: InjectionToken<T>): T
-public parseBody<T = unknown>(options?: StreamCollectorOptions): Promise<T>
-```
+### Async patterns
 
-**Types/Interfaces**: PascalCase
+- HTTP body parsing is async: `HttpRequest.parseBody()` / `BodyParser.parse()` return `Promise`. Handlers await the body before responding.
+- `HttpServer.close()` returns a `Promise` that resolves when all tracked sockets are closed (graceful shutdown).
 
-```typescript
-export type { HttpServerOptions, RequestHandler }
-export interface ILogger { ... }
-export type Provider<T> = ...
-```
+### Dependency injection usage
 
-**Constants/Enums**: UPPER_SNAKE_CASE
+```ts
+import { Container, Injectable, Inject } from '@framework/di';
 
-```typescript
-export enum LogLevel {
-  DEBUG,
-  INFO,
-  WARN,
-  ERROR,
+@Injectable()
+class DatabaseService {
+  public readonly id = Math.random();
 }
-export const METADATA_KEYS = { INJECTABLE: Symbol('injectable') };
+
+@Injectable()
+class UserRepository {
+  constructor(@Inject(DB_TOKEN) public db: DatabaseService) {}
+}
+
+@Injectable()
+class UserService {
+  @Inject('CONFIG')
+  public config!: { appName: string };
+
+  constructor(@Inject(UserRepository) public repo: UserRepository) {}
+}
+
+const container = new Container();
+container.register({ provide: DB_TOKEN, useClass: DatabaseService });
+container.register({ provide: 'CONFIG', useValue: { appName: 'TestFramework' } });
+container.register(UserRepository);
+container.register(UserService);
+
+const service = container.resolve<UserService>(UserService);
+// container.initSingletons(); // optional: pre-build singletons in topological order
 ```
 
-### Error Handling
+### Logging
 
-Custom error classes extend native `Error` with specific error types:
+```ts
+import { ConsoleLogger } from '@framework/logger';
 
-- HTTP: `BadRequestError`, `PayloadTooLargeError`, `InvalidHeaderError`
-- DI: `CircularDependencyError`, `ContainerError`
-
-All errors have descriptive message templates and no internal state mutation.
-
-### Async Patterns
-
-**Promise-based APIs**: All async operations return `Promise<T>`
-
-```typescript
-public listen(port?: number, host?: string): Promise<void>
-public close(): Promise<void>
-public parseBody<T = unknown>(options?: StreamCollectorOptions): Promise<T>
-```
-
-**Fluent API Pattern**: Response builder returns `this` for chaining
-
-```typescript
-public status(code: number): this { ... }
-public header(name: string, value: string | string[]): this { ... }
-public json(data: unknown): void { ... }
-```
-
-### Dependency Injection Patterns
-
-**Lifetime Scopes**:
-
-- `singleton`: Single instance per container (default)
-- `request`: New instance per `ScopedContainer` (per HTTP request)
-- `transient`: Always new instance on resolution
-
-**Provider Types**:
-
-```typescript
-// Class provider (auto-wraps constructor)
-register(MyService);
-
-// Factory provider
-register({ provide: MyService, useFactory: () => createService() });
-
-// Value provider
-register({ provide: Config, useValue: { port: 3000 } });
-```
-
-**Decorators**:
-
-```typescript
-@Injectable({ scope: 'singleton' })
-export class DatabaseService { ... }
-
-@Injectable({ scope: 'request' })
-export class RequestHandler { ... }
-```
-
-### Module Pattern
-
-Each package exports from `index.ts` using ES module syntax:
-
-```typescript
-// packages/http/src/index.ts
-export { HttpServer } from './server/http-server.js';
-export type { HttpServerOptions, RequestHandler } from './types/server-options.js';
-export { HttpRequest } from './context/http-request.js';
+const logger = new ConsoleLogger({
+  level: 'info', // trace | debug | info | warn | error | fatal
+  json: true, // default true — structured JSON; set false for text
+  timestamp: true, // default true
+  defaultContext: { service: 'api' },
+});
+logger.info('request', { userId: 42 }); // warn+ go to stderr, others to stdout
 ```
 
 ## Important Files
 
-| File                                                 | Purpose                                  |
-| ---------------------------------------------------- | ---------------------------------------- |
-| `package.json`                                       | Root monorepo config, build/test scripts |
-| `tsconfig.base.json`                                 | Shared TypeScript configuration          |
-| `packages/http/src/index.ts`                         | HTTP module entry point                  |
-| `packages/di/src/container/container.ts`             | Core DI container implementation         |
-| `packages/di/src/decorators/injectable.decorator.ts` | Injectable decorator                     |
-| `packages/logger/src/index.ts`                       | Logger module exports                    |
+- `packages/*/src/index.ts` — public API surface for each package.
+- `tsconfig.base.json` — base compiler options (extend everywhere).
+- `tsconfig.test.json` — test config (decorators enabled).
+- `tsup.config.base.ts` — shared `baseBuildConfig` used by every package's tsup config.
+- `eslint.config.js` — lint rules.
+- `pnpm-workspace.yaml` — workspace trust/pinning policy.
+- `packages/*/tsup.config.ts` — per-package build (extends `../../tsup.config.base.ts`).
 
 ## Runtime/Tooling Preferences
 
-### Required Runtime
-
-- **Node.js**: `>=22` (required for native test runner)
-- **pnpm**: `>=12.4.2` (monorepo package manager)
-
-### Package Manager
-
-- **pnpm** exclusively (configured in root `package.json`)
-
-### Tooling Stack
-
-| Tool       | Purpose                                   |
-| ---------- | ----------------------------------------- |
-| `tsx`      | TypeScript execution + native test runner |
-| `tsup`     | Build tool (zero-config TypeScript → JS)  |
-| `eslint`   | Linting with TypeScript support           |
-| `prettier` | Code formatting                           |
-
-### No External Dependencies
-
-- All packages are **zero-dependency** on external npm packages
-- Only use Node.js built-in modules and peer dependencies from workspace
-- Build tools (`tsup`, `tsx`) are devDependencies only
+- **Node ≥22**, **pnpm ≥12.4.2** (`packageManager` field pins `pnpm@12.4.2`).
+- **ESM only** (`"type": "module"` in root and every package).
+- **Zero runtime dependencies** — do not introduce runtime deps; add tooling deps only when required, respecting `blockExoticSubdeps` and `minimumReleaseAge: 10080`.
+- `@swc/core` and `esbuild` are allowed builds in `pnpm-workspace.yaml` (`allowBuilds`).
 
 ## Testing & QA
 
-### Test Framework
+- **Framework**: `node:test` (`describe`/`it`) + `node:assert/strict`.
+- **File naming**: `*.spec.ts`, colocated in `packages/<pkg>/src/__tests__/`.
+- **Runner**: `tsx --tsconfig tsconfig.test.json --test "packages/**/*.spec.ts"` (root `test` script).
+- **Real servers**: `http-server.spec.ts` starts a real listening `HttpServer` on a fixed port; close it in `afterEach` (see example below).
+- **DI tests**: use `@Injectable`/`@Inject` with `Symbol`/string tokens; assert instance identity for singletons, property injection, and `ContainerError` for unregistered tokens.
+- **Test-only config**: `tsconfig.test.json` enables `experimentalDecorators` + `emitDecoratorMetadata` (required for DI).
 
-- **Native Node.js test runner** (`node:test`) via `tsx`
-- No external testing frameworks (Jest, Vitest, etc.)
-- Assertions via `node:assert/strict`
+```ts
+import { describe, it, beforeEach, afterEach } from 'node:test';
+import assert from 'node:assert/strict';
+import http from 'node:http';
+import { HttpServer } from '../server/http-server.js';
 
-### Test Organization
+describe('HttpServer Wrapper & Socket Lifecycle', () => {
+  let server: HttpServer;
+  const TEST_PORT = 3891;
 
-```
-packages/<name>/src/__tests__/
-├── module-name.spec.ts
-└── integration.spec.ts
-```
+  beforeEach(() => {
+    server = new HttpServer(
+      (_req, res) => {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ status: 'ok' }));
+      },
+      { port: TEST_PORT, host: '127.0.0.1' },
+    );
+  });
 
-### Running Tests
+  afterEach(async () => {
+    if (server && server.isRunning()) {
+      await server.close();
+    }
+  });
 
-```bash
-# Run all tests
-pnpm test
+  it('should start listening and process HTTP requests', async () => {
+    await server.listen();
+    assert.equal(server.isRunning(), true);
 
-# Watch mode with auto-reload
-pnpm test:watch
+    const response = await new Promise<{ statusCode: number; body: string }>((resolve, reject) => {
+      http
+        .get(`http://127.0.0.1:${TEST_PORT}`, (res) => {
+          let data = '';
+          res.on('data', (chunk) => (data += chunk));
+          res.on('end', () => resolve({ statusCode: res.statusCode ?? 0, body: data }));
+          res.on('error', reject);
+        })
+        .on('error', reject);
+    });
 
-# Target specific package tests
-tsx --test packages/http/src/__tests__/*.spec.ts
-```
-
-### Test Patterns
-
-- **Unit tests**: Isolated function/class behavior
-- **Integration tests**: Real HTTP server with mocked handlers
-- **Decorator tests**: Metadata validation and reflection
-- **Error handling**: Exception coverage in error paths
-
-### Coverage Expectations
-
-- Core classes: 95%+ line coverage
-- Public APIs: 100% coverage
-- Edge cases: All error conditions tested
-- Performance: Critical paths have timing assertions
-
-## Package Exports
-
-### @framework/http
-
-```typescript
-// Server & Options
-export { HttpServer } from './server/http-server.js';
-export type { HttpServerOptions, RequestHandler } from './types/server-options.js';
-
-// Request/Response
-export { HttpRequest } from './context/http-request.js';
-export { HttpResponse } from './context/http-response.js';
-
-// Body Parsing
-export { StreamCollector } from './stream/stream-collector.js';
-export type { StreamCollectorOptions } from './stream/stream-collector.js';
-export { BodyParser } from './parser/body-parser.js';
-export { safeJsonParse } from './parser/safe-json-parse.js';
-export { parseUrlEncoded } from './parser/url-encoded-parse.js';
-
-// Errors
-export { PayloadTooLargeError } from './errors/payload-too-large.error.js';
-export { BadRequestError } from './errors/bad-request.error.js';
-export { InvalidHeaderError } from './errors/invalid-header.error.js';
-
-// Utilities
-export { HeaderSanitizer } from './utils/header-sanitizer.js';
-```
-
-### @framework/di
-
-```typescript
-// Core Container
-export { Container } from './container/container.js';
-export { ScopedContainer } from './container/scoped-container.js';
-
-// Providers
-export { ProviderRegistry } from './providers/provider-registry.js';
-export type {
-  Provider,
-  ClassProvider,
-  ValueProvider,
-  FactoryProvider,
-} from './providers/provider.interface.js';
-
-// Decorators
-export { Injectable } from './decorators/injectable.decorator.js';
-export { Inject } from './decorators/inject.decorator.js';
-
-// Graph & Resolution
-export { DependencyGraph } from './graph/dependency-graph.js';
-export { CircularDependencyDetector } from './graph/circular-dependency-detector.js';
-
-// Types
-export type { InjectionToken, Newable } from './types/injection-token.js';
-export type { InjectableOptions, ScopeOption } from './types/injectable-options.js';
-```
-
-### @framework/logger
-
-```typescript
-// Logger Instance
-export { ConsoleLogger } from './console-logger.js';
-
-// Levels
-export { LogLevel, LOG_LEVEL_VALUES } from './types/log-level.js';
-
-// Trace Context
-export { AsyncTraceStore } from './context/trace-store.js';
-export type { TraceContext } from './context/trace-context.interface.js';
-
-// Diagnostics
-export { PerformanceDiagnostics } from './diagnostics/performance-diagnostics.js';
-export type { PerformanceMetricResult } from './diagnostics/performance-metric.interface.js';
-```
-
-## Quick Start Example
-
-```typescript
-import { HttpServer, HttpRequest, HttpResponse } from '@framework/http';
-import { Container, Injectable } from '@framework/di';
-import { ConsoleLogger, LogLevel } from '@framework/logger';
-
-@Injectable()
-class DatabaseService {
-  constructor(@Inject('config') private config: { port: number }) {}
-}
-
-@Injectable({ scope: 'request' })
-class RequestHandler {
-  constructor(
-    @Inject(DatabaseService) private db: DatabaseService,
-    @Inject(ConsoleLogger) private logger: ConsoleLogger,
-  ) {}
-
-  handle(req: HttpRequest): HttpResponse {
-    const response = new HttpResponse(req.rawResponse);
-    response.json({ message: 'Hello' });
-    return response;
-  }
-}
-
-const container = new Container();
-container.register([DatabaseService, RequestHandler]);
-container.build();
-
-const server = new HttpServer((req) => new RequestHandler().handle(req), {
-  port: 3000,
+    assert.equal(response.statusCode, 200);
+    assert.equal((JSON.parse(response.body) as { status: string })['status'], 'ok');
+  });
 });
-
-await server.listen(3000);
 ```

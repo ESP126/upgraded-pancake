@@ -1,7 +1,7 @@
 {
-  "name": "@framework/di",
+  "name": "@framework/router",
   "version": "0.0.1",
-  "description": "Zero-dependency high-performance Dependency Injection container for the framework.",
+  "description": "Zero-dependency high-performance Radix Tree HTTP router for the framework",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

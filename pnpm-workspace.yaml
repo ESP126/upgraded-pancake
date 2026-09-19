@@ -3,3 +3,14 @@ packages:
 allowBuilds:
   '@swc/core': true
   esbuild: true
+
+blockExoticSubdeps: true
+minimumReleaseAge: 10080
+
+minimumReleaseAgeExclude:
+  - '@types/node@22.20.4'
+trustPolicy: no-downgrade
+
+trustPolicyExclude:
+  - 'undici-types'
+  - 'chokidar'
