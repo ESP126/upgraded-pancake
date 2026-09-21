@@ -27,7 +27,13 @@ export class BodyParser {
       return undefined;
     }
 
-    const contentType = (contentTypeHeader ?? '').toLowerCase().split(';')[0]?.trim() ?? '';
+    // Performance optimization: Avoid string.split(';') array allocation by using indexOf and slice.
+    let contentType = '';
+    if (contentTypeHeader) {
+      const semiIndex = contentTypeHeader.indexOf(';');
+      const rawType = semiIndex === -1 ? contentTypeHeader : contentTypeHeader.slice(0, semiIndex);
+      contentType = rawType.trim().toLowerCase();
+    }
 
     if (contentType === 'application/json') {
       const text = buffer.toString('utf-8');

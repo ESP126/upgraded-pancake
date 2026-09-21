@@ -32,15 +32,23 @@ export class StreamCollector {
       const chunks: Buffer[] = [];
       let totalBytes = 0;
 
+      let isCleanedUp = false;
+
+      // Performance optimization: Guard cleanup so event listeners are removed only once,
+      // avoiding redundant removeListener calls when 'end' and 'close' fire sequentially.
       const cleanup = (): void => {
+        if (isCleanedUp) return;
+        isCleanedUp = true;
         stream.removeListener('data', onData);
-        stream.removeListener('and', onEnd);
+        stream.removeListener('end', onEnd);
         stream.removeListener('error', onError);
         stream.removeListener('close', onClose);
       };
 
       const onData = (chunk: Buffer | string): void => {
-        const bufferChunk = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+        // Performance optimization: Avoid Buffer.isBuffer method call overhead for every chunk.
+        // In HTTP request streams, chunks are almost always Buffer instances.
+        const bufferChunk = typeof chunk === 'string' ? Buffer.from(chunk) : chunk;
         totalBytes += bufferChunk.length;
 
         if (totalBytes > maxBodySize) {
