@@ -1,6 +1,16 @@
+<!-- spec_version: 1.5.0 -->
+
 # AGENTS.md
 
 `@framework/monorepo` — a zero-dependency, modular TypeScript web framework. ESM-only, Node ≥ 22.
+
+## Setup
+
+- Fresh clone: run `pnpm install` once (workspace root). Nothing works without `node_modules` — the dev toolchain (eslint, prettier, tsup, tsx, typescript) is installed here even though the packages themselves have zero runtime deps.
+
+## Authority
+
+`AGENTS.md` is the source of truth for the commands below and for code conventions. This file wins over a file's inline comments when they conflict.
 
 ## Layout
 
@@ -49,7 +59,7 @@ pnpm workspace with four independent packages under `packages/*` (no inter-depen
 
 Node ≥ 22, pnpm ≥ 12.4.2 (`packageManager` pins `pnpm@12.4.2`).
 
-- `pnpm test` — all specs (via `tsx --tsconfig tsconfig.test.json --test`). Uses `node:test` + `node:assert/strict`.
+- `pnpm test` — all specs, globbing both `packages/**/*.spec.ts` and `packages/**/*.test.ts` (via `tsx --tsconfig tsconfig.test.json --test`). Uses `node:test` + `node:assert/strict`.
 - `pnpm lint` / `pnpm lint:fix` — ESLint (`.`; `--fix` autofix).
 - `pnpm format` / `pnpm format:check` — Prettier.
 - `pnpm build` — build every package with tsup (`pnpm --recursive run build`). Single package: `pnpm --filter @framework/http build`.
