@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-dynamic-delete */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { RadixNode } from '../nodes/radix-node.js';
 import { NodeType } from '../types/node-type.js';
@@ -157,7 +158,7 @@ export class RadixTree<T = unknown> {
     const params: Record<string, string> = {};
     const searchPath = normalizedPath === '/' ? '/' : normalizedPath.slice(1);
 
-    const matchedNode = this.matchNode(this.root, searchPath, params);
+    const matchedNode = this.matchNode(this.root, searchPath, params, upperMethod);
 
     if (!matchedNode) {
       return undefined;
@@ -175,6 +176,7 @@ export class RadixTree<T = unknown> {
     node: RadixNode<T>,
     path: string,
     params: Record<string, string>,
+    method: string,
   ): RadixNode<T> | undefined {
     if (path === '/' && node.prefix === '/') {
       return node;
@@ -184,61 +186,88 @@ export class RadixTree<T = unknown> {
       return undefined;
     }
 
-    const remainingPath = node.prefix === '/' ? path : path.slice(node.prefix.length);
+    const remainingPath =
+      node.prefix === '/'
+        ? path.startsWith('/')
+          ? path.slice(1)
+          : path
+        : path.slice(node.prefix.length);
 
     if (remainingPath.length === 0) {
-      return node;
+      if (node.getHandler(method)) {
+        return node;
+      }
     }
 
     // Try static child match
-    const firstChar = remainingPath[0]!;
-    const staticChild = node.getStaticChild(firstChar);
+    if (remainingPath.length > 0) {
+      const firstChar = remainingPath[0]!;
+      const staticChild = node.getStaticChild(firstChar);
 
-    if (staticChild) {
-      const matched = this.matchNode(staticChild, remainingPath, params);
-      if (matched) {
-        return matched;
+      if (staticChild) {
+        const matched = this.matchNode(staticChild, remainingPath, params, method);
+        if (matched) {
+          return matched;
+        }
       }
     }
 
     // Try parametric child match (:param)
     if (node.paramChild) {
-      const nextSlashIndex = remainingPath.indexOf('/');
-      const paramValue =
-        nextSlashIndex === -1 ? remainingPath : remainingPath.slice(0, nextSlashIndex);
-      const restPath = nextSlashIndex === -1 ? '' : remainingPath.slice(nextSlashIndex);
+      const paramPath = remainingPath.startsWith('/') ? remainingPath.slice(1) : remainingPath;
 
-      if (node.paramChild.paramName) {
-        params[node.paramChild.paramName] = decodeURIComponent(paramValue);
-      }
+      if (paramPath.length > 0) {
+        const nextSlashIndex = paramPath.indexOf('/');
+        const paramValue = nextSlashIndex === -1 ? paramPath : paramPath.slice(0, nextSlashIndex);
+        const restPath = nextSlashIndex === -1 ? '' : paramPath.slice(nextSlashIndex);
 
-      if (restPath.length === 0) {
-        return node.paramChild;
-      }
+        const previousParamValue = node.paramChild.paramName
+          ? params[node.paramChild.paramName]
+          : undefined;
 
-      if (restPath.startsWith('/')) {
-        const afterSlash = restPath.slice(1);
-        const nextChar = afterSlash[0];
-        if (nextChar && node.paramChild.getStaticChild(nextChar)) {
-          const matched = this.matchNode(
-            node.paramChild.getStaticChild(nextChar)!,
-            afterSlash,
-            params,
-          );
-          if (matched) return matched;
+        if (node.paramChild.paramName) {
+          params[node.paramChild.paramName] = decodeURIComponent(paramValue);
+        }
+
+        if (restPath.length === 0) {
+          if (node.paramChild.getHandler(method)) {
+            return node.paramChild;
+          }
+        } else if (restPath.startsWith('/')) {
+          const afterSlash = restPath.slice(1);
+          const nextChar = afterSlash[0];
+          if (nextChar) {
+            const childStatic = node.paramChild.getStaticChild(nextChar);
+            if (childStatic) {
+              const matched = this.matchNode(childStatic, afterSlash, params, method);
+              if (matched) {
+                return matched;
+              }
+            }
+          }
+        }
+
+        // Backtrack param on failed match
+        if (node.paramChild.paramName) {
+          if (previousParamValue !== undefined) {
+            params[node.paramChild.paramName] = previousParamValue;
+          } else {
+            delete params[node.paramChild.paramName];
+          }
         }
       }
     }
 
-    // Try wildcard child matched (*wildcard)
+    // Try wildcard child match (*wildcard)
     if (node.wildcardChild) {
+      const wildcardPath = remainingPath.startsWith('/') ? remainingPath.slice(1) : remainingPath;
       if (node.wildcardChild.paramName) {
-        params[node.wildcardChild.paramName] = decodeURIComponent(remainingPath);
+        params[node.wildcardChild.paramName] = decodeURIComponent(wildcardPath);
       }
       return node.wildcardChild;
     }
 
-    return undefined;
+    return remainingPath.length === 0 ? node : undefined;
   }
 
   private normalizePath(path: string): string {
