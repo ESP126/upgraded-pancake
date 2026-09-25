@@ -7,9 +7,9 @@ export class RadixNode<T = unknown> {
   public prefix: string;
   public type: NodeType;
   public readonly staticChildren = new Map<string, RadixNode<T>>();
-  public paramChild?: RadixNode<T>;
-  public wildcardChild?: RadixNode<T>;
-  public paramName?: string;
+  public paramChild?: RadixNode<T> | undefined;
+  public wildcardChild?: RadixNode<T> | undefined;
+  public paramName?: string | undefined;
   public handlers = new Map<string, T>();
 
   /**
