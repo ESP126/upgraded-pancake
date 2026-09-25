@@ -61,4 +61,51 @@ describe('RadixTree Route Insertion & Node Splitting', () => {
     assert.equal(wildcardNode.paramName, 'filepath');
     assert.equal(wildcardNode.getHandler('GET'), 'serve_static_file');
   });
+
+  describe('RadixTree Fast Route Lookup & Parameter Extraction', () => {
+    it('should find exact static routes', () => {
+      const tree = new RadixTree<string>();
+      tree.insert('GET', '/api/v1/health', 'health_handler');
+
+      const match = tree.find('GET', '/api/v1/health');
+
+      assert.ok(match);
+      assert.equal(match.handler, 'health_handler');
+      assert.deepEqual(match.params, {});
+    });
+
+    it('should match parametric routes and extract parameter values', () => {
+      const tree = new RadixTree<string>();
+      tree.insert('GET', '/users/:userId/posts/:postId', 'get_post_handler');
+
+      const match = tree.find('GET', '/users/usr_123/posts/post_456');
+
+      assert.ok(match);
+      assert.equal(match.handler, 'get_post_handler');
+      assert.equal(match.params['userId'], 'usr_123');
+      assert.equal(match.params['postId'], 'post_456');
+    });
+
+    it('should match wildcard routes and capture remaining path', () => {
+      const tree = new RadixTree<string>();
+      tree.insert('GET', '/files/*filepath', 'file_handler');
+
+      const match = tree.find('GET', '/files/images/2026/logo.png');
+
+      assert.ok(match);
+      assert.equal(match.handler, 'file_handler');
+      assert.equal(match.params['filepath'], 'images/2026/logo.png');
+    });
+
+    it('should return undefined for unregistered routes or mismatched HTTP methods', () => {
+      const tree = new RadixTree<string>();
+      tree.insert('GET', '/users', 'get_users');
+
+      const nonExistentMatch = tree.find('GET', '/products');
+      assert.equal(nonExistentMatch, undefined);
+
+      const methodMismatch = tree.find('POST', '/users');
+      assert.equal(methodMismatch, undefined);
+    });
+  });
 });

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { RadixNode } from '../nodes/radix-node.js';
 import { NodeType } from '../types/node-type.js';
+import type { MatchedRoute } from '../types/matched-route.js';
 
 /**
  * Radix Tree route storage and lookup structure.
@@ -140,6 +141,104 @@ export class RadixTree<T = unknown> {
     }
 
     currentNode.addHandler(upperMethod, handler);
+  }
+
+  /**
+   * Finds and matches a route by HTTP method and URL path, extracting dynamic parameters.
+   *
+   * @param method - HTTP method string in uppercase (e.g., 'GET', 'POST').
+   * @param path - Incoming request URL path string.
+   * @returns MatchedRoute object containing the handler and extracted params, or undefined.
+   */
+  public find(method: string, path: string): MatchedRoute<T> | undefined {
+    const normalizedPath = this.normalizePath(path);
+    const upperMethod = method.toUpperCase();
+
+    const params: Record<string, string> = {};
+    const searchPath = normalizedPath === '/' ? '/' : normalizedPath.slice(1);
+
+    const matchedNode = this.matchNode(this.root, searchPath, params);
+
+    if (!matchedNode) {
+      return undefined;
+    }
+
+    const handler = matchedNode.getHandler(upperMethod);
+    if (!handler) {
+      return undefined;
+    }
+
+    return { handler, params };
+  }
+
+  private matchNode(
+    node: RadixNode<T>,
+    path: string,
+    params: Record<string, string>,
+  ): RadixNode<T> | undefined {
+    if (path === '/' && node.prefix === '/') {
+      return node;
+    }
+
+    if (node.prefix !== '/' && !path.startsWith(node.prefix)) {
+      return undefined;
+    }
+
+    const remainingPath = node.prefix === '/' ? path : path.slice(node.prefix.length);
+
+    if (remainingPath.length === 0) {
+      return node;
+    }
+
+    // Try static child match
+    const firstChar = remainingPath[0]!;
+    const staticChild = node.getStaticChild(firstChar);
+
+    if (staticChild) {
+      const matched = this.matchNode(staticChild, remainingPath, params);
+      if (matched) {
+        return matched;
+      }
+    }
+
+    // Try parametric child match (:param)
+    if (node.paramChild) {
+      const nextSlashIndex = remainingPath.indexOf('/');
+      const paramValue =
+        nextSlashIndex === -1 ? remainingPath : remainingPath.slice(0, nextSlashIndex);
+      const restPath = nextSlashIndex === -1 ? '' : remainingPath.slice(nextSlashIndex);
+
+      if (node.paramChild.paramName) {
+        params[node.paramChild.paramName] = decodeURIComponent(paramValue);
+      }
+
+      if (restPath.length === 0) {
+        return node.paramChild;
+      }
+
+      if (restPath.startsWith('/')) {
+        const afterSlash = restPath.slice(1);
+        const nextChar = afterSlash[0];
+        if (nextChar && node.paramChild.getStaticChild(nextChar)) {
+          const matched = this.matchNode(
+            node.paramChild.getStaticChild(nextChar)!,
+            afterSlash,
+            params,
+          );
+          if (matched) return matched;
+        }
+      }
+    }
+
+    // Try wildcard child matched (*wildcard)
+    if (node.wildcardChild) {
+      if (node.wildcardChild.paramName) {
+        params[node.wildcardChild.paramName] = decodeURIComponent(remainingPath);
+      }
+      return node.wildcardChild;
+    }
+
+    return undefined;
   }
 
   private normalizePath(path: string): string {
