@@ -1,9 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { Container } from '../container/container.js';
-import { Injectable } from '../decorators/injectable.decorator.js';
-import { Inject } from '../decorators/inject.decorator.js';
-import { ContainerError } from '../errors/container.error.js';
+import { Container, Injectable, Inject, ContainerError } from '../index.js';
 
 describe('Container & Singleton Scope Resolution', () => {
   const DB_TOKEN = Symbol('DB_TOKEN');

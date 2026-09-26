@@ -1,7 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { MetadataStorage } from '../metadata/metadata-storage.js';
-import { METADATA_KEYS } from '../metadata/metadata-keys.js';
+import { MetadataStorage, METADATA_KEYS } from '../index.js';
 
 describe('MetadataStorage', () => {
   // eslint-disable-next-line @typescript-eslint/no-extraneous-class

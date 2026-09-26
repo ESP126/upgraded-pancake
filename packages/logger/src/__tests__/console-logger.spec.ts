@@ -2,7 +2,7 @@
 
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, describe, it } from 'node:test';
-import { ConsoleLogger } from '../console-logger.js';
+import { ConsoleLogger } from '../index.js';
 
 describe('ConsoleLogger Implementation', () => {
   let stdoutOutput: string[] = [];

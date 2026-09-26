@@ -1,10 +1,7 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { HttpServer } from '../server/http-server.js';
-import { HttpResponse } from '../context/http-response.js';
-import { HeaderSanitizer } from '../utils/header-sanitizer.js';
-import { InvalidHeaderError } from '../errors/invalid-header.error.js';
+import { HttpServer, HttpResponse, HeaderSanitizer, InvalidHeaderError } from '../index.js';
 
 describe('HeaderSanitizer & CRLF Protection', () => {
   let server: HttpServer;

@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { CookieSerializer } from '../utils/cookie-serializer.js';
+import { CookieSerializer } from '../index.js';
 
 describe('CookieSerializer &  Cryptographic Signatures', () => {
   const SECRET = 'super-secret-key-123';

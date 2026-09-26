@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { PerformanceDiagnostics } from '../diagnostics/performance-diagnostics.js';
+import { PerformanceDiagnostics } from '../index.js';
 
 describe('PerformanceDiagnostics', () => {
   it('should measure duration between start and end calls', async () => {

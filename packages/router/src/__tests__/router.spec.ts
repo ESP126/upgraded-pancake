@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { Router } from '../router.js';
+import { Router } from '../index.js';
 
 describe('Router & Route Grouping Facade', () => {
   it('should register routes via HTTP method shortcuts', () => {

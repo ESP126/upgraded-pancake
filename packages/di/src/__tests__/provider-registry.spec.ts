@@ -2,13 +2,13 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { ProviderRegistry } from '../providers/provider-registry.js';
 import {
+  ProviderRegistry,
   isClassProvider,
   isValueProvider,
   isFactoryProvider,
   isExistingProvider,
-} from '../providers/provider.interface.js';
+} from '../index.js';
 
 describe('ProviderRegistry & Provider Types', () => {
   class ServiceA {}

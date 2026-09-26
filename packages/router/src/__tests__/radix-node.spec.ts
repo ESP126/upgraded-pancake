@@ -1,7 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { RadixNode } from '../nodes/radix-node.js';
-import { NodeType } from '../types/node-type.js';
+import { RadixNode, NodeType } from '../index.js';
 
 describe('RadixNode & Trie Architecture', () => {
   it('should initialize node with default STATIC type and empty prefix', () => {

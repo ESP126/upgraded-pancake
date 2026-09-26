@@ -1,10 +1,12 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { ProviderRegistry } from '../providers/provider-registry.js';
-import { DependencyGraph } from '../graph/dependency-graph.js';
-import { Injectable } from '../decorators/injectable.decorator.js';
-import { Inject } from '../decorators/inject.decorator.js';
-import { CircularDependencyError } from '../errors/circular-dependency.error.js';
+import {
+  ProviderRegistry,
+  DependencyGraph,
+  Injectable,
+  Inject,
+  CircularDependencyError,
+} from '../index.js';
 
 describe('CircularDependencyDetector', () => {
   it('should detect a direct circular dependency (A -> B -> A)', () => {

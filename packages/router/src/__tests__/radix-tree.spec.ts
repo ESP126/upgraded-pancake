@@ -1,7 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { RadixTree } from '../tree/radix-tree.js';
-import { NodeType } from '../types/node-type.js';
+import { RadixTree, NodeType } from '../index.js';
 
 describe('RadixTree Route Insertion & Node Splitting', () => {
   it('should insert static routes and split node prefixes on common divergence', () => {

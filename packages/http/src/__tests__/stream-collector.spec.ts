@@ -1,8 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
-import { StreamCollector } from '../stream/stream-collector.js';
-import { PayloadTooLargeError } from '../errors/payload-too-large.error.js';
+import { StreamCollector, PayloadTooLargeError } from '../index.js';
 
 describe('StreamCollector & Payload Limit Safety', () => {
   it('should successfully collect into a single Buffer', async () => {

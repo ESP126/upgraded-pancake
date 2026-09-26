@@ -1,7 +1,6 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { AsyncTraceStore } from '../context/trace-store.js';
-import { ConsoleLogger } from '../console-logger.js';
+import { AsyncTraceStore, ConsoleLogger } from '../index.js';
 
 describe('AsyncTraceStore & Context Propagation', () => {
   let stdoutOutput: string[] = [];

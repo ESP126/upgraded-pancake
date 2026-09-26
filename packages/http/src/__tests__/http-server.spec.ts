@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { HttpServer } from '../server/http-server.js';
+import { HttpServer } from '../index.js';
 
 describe('HttpServer Wrapper & Socker Lifecycle', () => {
   let server: HttpServer;

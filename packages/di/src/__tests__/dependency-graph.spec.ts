@@ -1,9 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { ProviderRegistry } from '../providers/provider-registry.js';
-import { DependencyGraph } from '../graph/dependency-graph.js';
-import { Injectable } from '../decorators/injectable.decorator.js';
-import { Inject } from '../decorators/inject.decorator.js';
+import { ProviderRegistry, DependencyGraph, Injectable, Inject } from '../index.js';
 
 describe('DependencyGraph & Directed Graph Constrution', () => {
   const DB_TOKEN = Symbol('DB_TOKEN');

@@ -1,9 +1,7 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { HttpServer } from '../server/http-server.js';
-import { HttpRequest } from '../context/http-request.js';
-import { HttpResponse } from '../context/http-response.js';
+import { HttpServer, HttpRequest, HttpResponse } from '../index.js';
 
 describe('HttpRequest & HttpResponse Wrappers', () => {
   let server: HttpServer;

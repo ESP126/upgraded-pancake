@@ -1,10 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
-import { safeJsonParse } from '../parser/safe-json-parse.js';
-import { parseUrlEncoded } from '../parser/url-encoded-parse.js';
-import { BodyParser } from '../parser/body-parser.js';
-import { BadRequestError } from '../errors/bad-request.error.js';
+import { safeJsonParse, parseUrlEncoded, BodyParser, BadRequestError } from '../index.js';
 
 describe('BodyParser & Security Protections', () => {
   it('should safely parse JSON and remove prototype pollution keys (__proto__, constructor)', () => {

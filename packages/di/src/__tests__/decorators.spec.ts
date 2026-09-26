@@ -1,11 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { Injectable } from '../decorators/injectable.decorator.js';
-import { Inject } from '../decorators/inject.decorator.js';
-import { MetadataStorage } from '../metadata/metadata-storage.js';
-import { METADATA_KEYS } from '../metadata/metadata-keys.js';
-import type { InjectableOptions } from '../types/injectable-options.js';
-import type { InjectionToken } from '../types/injection-token.js';
+import { Injectable, Inject, MetadataStorage, METADATA_KEYS } from '../index.js';
+import type { InjectableOptions, InjectionToken } from '../index.js';
 
 describe('DI Decorator (@Injectable & @Inject)', () => {
   it('should attach @Injectable metadata with custom scope to target class', () => {

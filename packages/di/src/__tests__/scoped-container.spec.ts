@@ -1,7 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { Container } from '../container/container.js';
-import { Injectable } from '../decorators/injectable.decorator.js';
+import { Container, Injectable } from '../index.js';
 
 describe('Transient and Requset Scope Resolution', () => {
   @Injectable({ scope: 'transient' })
