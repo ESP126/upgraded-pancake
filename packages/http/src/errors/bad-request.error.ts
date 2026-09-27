@@ -1,18 +1,8 @@
-/**
- * Custom HTTP 400 Bad Request exception thrown when a request payload is malformed or invalid.
- */
-export class BadRequestError extends Error {
-  public readonly statusCode = 400;
+import { HttpException } from './http.exception.js';
+import { HttpStatus } from './http-status.enum.js';
 
-  /**
-   * Creates a new BadRequestError instance.
-   *
-   * @param message - Error description message.
-   */
+export class BadRequestError extends HttpException {
   constructor(message = 'Bad Request') {
-    super(message);
-    this.name = 'BadRequestError';
-
-    Object.setPrototypeOf(this, new.target.prototype);
+    super(message, HttpStatus.BAD_REQUEST);
   }
 }

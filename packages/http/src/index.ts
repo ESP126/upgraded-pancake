@@ -6,9 +6,7 @@ export { HttpResponse } from './context/http-response.js';
 
 export { StreamCollector } from './stream/stream-collector.js';
 export { type StreamCollectorOptions } from './stream/stream-collector.js';
-export { PayloadTooLargeError } from './errors/payload-too-large.error.js';
 
-export { BadRequestError } from './errors/bad-request.error.js';
 export { safeJsonParse } from './parser/safe-json-parse.js';
 export { parseUrlEncoded } from './parser/url-encoded-parse.js';
 export { BodyParser } from './parser/body-parser.js';
@@ -21,3 +19,17 @@ export type { CookieOptions } from './types/cookie-options.js';
 
 export type { MiddlewareHandler, NextFunction } from './types/middleware.js';
 export { MiddlewareCompositor } from './middleware/middleware-compositor.js';
+
+export { HttpStatus } from './errors/http-status.enum.js';
+export { HttpException } from './errors/http.exception.js';
+export { BadRequestError } from './errors/bad-request.error.js';
+export { PayloadTooLargeError } from './errors/payload-too-large.error.js';
+export {
+  BadRequestException,
+  UnauthorizedException,
+  ForbiddenException,
+  NotFoundException,
+  ConflictException,
+  UnprocessableEntityException,
+  InternalServerErrorException,
+} from './errors/http.exceptions.js';
