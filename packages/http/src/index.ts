@@ -18,3 +18,6 @@ export { HeaderSanitizer } from './utils/header-sanitizer.js';
 
 export { CookieSerializer } from './utils/cookie-serializer.js';
 export type { CookieOptions } from './types/cookie-options.js';
+
+export type { MiddlewareHandler, NextFunction } from './types/middleware.js';
+export { MiddlewareCompositor } from './middleware/middleware-compositor.js';
