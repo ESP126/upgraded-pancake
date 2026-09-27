@@ -20,7 +20,7 @@ export class UnauthorizedException extends HttpException {
 }
 
 /**
- * 403 Dorbidden Exception.
+ * 403 Forbidden Exception.
  */
 export class ForbiddenException extends HttpException {
   constructor(response: string | Record<string, unknown> = 'Forbidden') {

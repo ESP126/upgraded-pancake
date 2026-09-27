@@ -3,6 +3,7 @@ export type { HttpServerOptions, RequestHandler } from './types/server-options.j
 
 export { HttpRequest } from './context/http-request.js';
 export { HttpResponse } from './context/http-response.js';
+export { ExecutionContext } from './context/execution-context.js';
 
 export { StreamCollector } from './stream/stream-collector.js';
 export { type StreamCollectorOptions } from './stream/stream-collector.js';
@@ -33,3 +34,6 @@ export {
   UnprocessableEntityException,
   InternalServerErrorException,
 } from './errors/http.exceptions.js';
+
+export type { CanActivate, GuardType } from './guards/can-active.interface.js';
+export { GuardEvaluator } from './guards/guard-evaluator.js';
